@@ -1,5 +1,7 @@
 import streamlit as st
 import requests
+from state import State
+from userfeedback import get_user_feedback
 
 def request_entity_viewer():
     st.header("Request Entity Viewer")
@@ -27,12 +29,32 @@ def request_entity_viewer():
                             st.write("**Body:**")
                             st.json(request.get('body'))
                             
-                            if st.button(f"Regenerate {request_name}", key=f"trigger_{request_name}_{index}"):
-                                st.session_state['selected_request'] = request
-                                st.session_state['regenerate'] = True
-                                # Triggering action on button press
-                                print("Trying to trigger and compare with the old request")
-                                st.success(f"{request_name} triggered!")  
+                            if st.button(f"Regenerate {request_name}", key=f"trigger_{index}"):
+                                intialState = State(original_body=request.get('body')) 
+                                get_user_feedback(intialState)
+                                # st.session_state['selected_request'] = request
+                                # st.session_state['regenerate'] = True
+                             # Button to test the request
+                            if st.button(f"Test the Request", key=f"test_{index}"):
+                               with st.spinner("Sending request..."):
+                                 try:
+                                   url = request.get('url')  # Optionally use request.get('url') if different
+                                   headers = request.get('headers', {})
+                                   input_data = request.get('name')
+ 
+                                   # Make the POST request
+                                   response = requests.post(url, headers=headers, json={'input': input_data})
+                    
+                                   # Check for a successful response
+                                   if response.status_code == 200:
+                                      st.write("Response:")
+                                      st.json(response.json())  # Display the response as JSON
+                                   else:
+                                      st.error(f"Request failed: {response.status_code} - {response.text}")
+
+                                 except Exception as e:
+                                   st.error(f"An error occurred: {e}")  # Display any error during the request
+                                
                     # Navigation based on session state
                     if st.session_state.get('regenerate'):
                       st.write("### Regenerated Request")
@@ -51,4 +73,4 @@ def request_entity_viewer():
         
         except Exception as e:
             st.error(f"An error occurred: {str(e)}")
-               
+             
