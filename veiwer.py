@@ -53,20 +53,20 @@ def stream_chat(request_name,thread_id):
                 st.session_state['regenerate_requested'] = False
 
         # Show feedback form
-        with st.form(key=f"feedback_form_{request_name}"):
-            feedback = st.text_area("💬 Please enter your feedback to continue:", "")
-            print(st.session_state)
-            st.markdown(f"**Thread ID:** `{thread_id}`")
-            st.markdown(f"**Request Name:** `{request_name}`")
-            submitted = st.form_submit_button("Submit Feedback and Resume")
-            if submitted:
-                st.markdown("🔄 Resuming the chat with your feedback...")
-                st.session_state['feedback'] = feedback
-                st.session_state['resume_requested'] = True
-                st.session_state['interrupted_thread'] = thread_id
-                st.session_state['interrupted_request_name'] = request_name
-                st.markdown("🔁 Restarting the streaming based on the user feed back...")
-                st.experimental_rerun()  
+        # with st.form(key=f"feedback_form_{request_name}"):
+        #     feedback = st.text_area("💬 Please enter your feedback to continue:", "")
+        #     print(st.session_state)
+        #     st.markdown(f"**Thread ID:** `{thread_id}`")
+        #     st.markdown(f"**Request Name:** `{request_name}`")
+        #     submitted = st.form_submit_button("Submit Feedback and Resume")
+        #     if submitted:
+        #         st.markdown("🔄 Resuming the chat with your feedback...")
+        #         st.session_state['feedback'] = feedback
+        #         st.session_state['resume_requested'] = True
+        #         st.session_state['interrupted_thread'] = thread_id
+        #         st.session_state['interrupted_request_name'] = request_name
+        #         st.markdown("🔁 Restarting the streaming based on the user feed back...")
+        #         st.experimental_rerun()  
                 # 🔁 RESTART STREAMING AFTER RESUME
                
 
@@ -84,11 +84,17 @@ def resume_chat(thread_id, feedback):
     try:
         response = requests.post(url, json=payload, stream=True)
         client = SSEClient(response)
-
         placeholder = st.empty()
         for event in client.events():
+            st.write(f"🔄 Processing event: {event.event} - {event.data}")
             if event.event == "interrupt":
                 placeholder.warning(f"⚠️ INTERRUPT: {event.data}")
+                    # 🔁 Save context and trigger next resume cycle
+                # st.session_state["resume_requested"] = True
+                # st.session_state["interrupted_thread"] = thread_id
+                # st.session_state["interrupted_request_name"] = st.session_state.get("request_name")
+                # st.session_state["feedback_needed"] = True  # Custom flag
+                # return  # Exit early and wait for next form submission
             elif event.event == "update":
                 placeholder.info(event.data)
             elif event.event == "end":
@@ -103,7 +109,7 @@ if st.session_state.get("regenerate_requested"):
     if request_name and thread_id:
         # Only trigger once
         st.session_state["regenerate_requested"] = False
-        stream_chat(request_name, thread_id)
+         #stream_chat(st.session_state['request_name'], st.session_state['thread_id'])
 
 if st.session_state.get("resume_requested"):
     print("🔄 Resuming chat based on user feedback...")
@@ -125,6 +131,8 @@ def request_entity_viewer():
 
     # Button to fetch requests
     if st.button("Fetch Requests"):
+        st.sidebar.markdown("### 🐛 Debug Info")
+        st.sidebar.json(st.session_state)
         # Call the FastAPI endpoint
         try:
             response = requests.get(f'http://127.0.0.1:8000/list?request_name={request_name}', headers={'accept': 'application/json'})
@@ -158,3 +166,22 @@ def request_entity_viewer():
         st.session_state["request_name"] = request_name
         st.session_state["thread_id"] = thread_id
         stream_chat(request_name, thread_id)
+    with st.form(key=f"feedback_form_{request_name}"):
+            st.sidebar.markdown("### 🐛 Debug Info")
+            st.sidebar.json(st.session_state)
+            feedback = st.text_area("💬 Please enter your feedback to continue:", "generate similar to  email in bteam@gmail.com")
+            submitted = st.form_submit_button("Submit Feedback and Resume")
+            if submitted:
+                st.markdown("🔄 Resuming the chat with your feedback...")
+                st.session_state['feedback'] = feedback
+                st.session_state['resume_requested'] = True
+                st.session_state['interrupted_thread'] = st.session_state.get("thread_id")
+                st.session_state['interrupted_request_name'] = st.session_state.get("request_name")
+                resume_chat(st.session_state['interrupted_thread'], feedback)
+                # 🔁 RESTART STREAMING AFTER RESUME
+                # st.markdown("🔁 Restarting the streaming based on the user feed back...")
+                # st.markdown("🔄 Calling `stream_chat()` now...")
+                # st.session_state["regenerate_requested"] = True
+                # st.write("📦 Session State:", st.session_state)
+                # stream_chat(st.session_state['interrupted_request_name'], st.session_state['interrupted_thread'])
+    
