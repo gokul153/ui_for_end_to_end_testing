@@ -90,11 +90,11 @@ def resume_chat(thread_id, feedback):
             if event.event == "interrupt":
                 placeholder.warning(f"⚠️ INTERRUPT: {event.data}")
                     # 🔁 Save context and trigger next resume cycle
-                # st.session_state["resume_requested"] = True
-                # st.session_state["interrupted_thread"] = thread_id
-                # st.session_state["interrupted_request_name"] = st.session_state.get("request_name")
-                # st.session_state["feedback_needed"] = True  # Custom flag
-                # return  # Exit early and wait for next form submission
+                st.session_state["resume_requested"] = True
+                st.session_state["interrupted_thread"] = thread_id
+                st.session_state["interrupted_request_name"] = st.session_state.get("request_name")
+                st.session_state["feedback_needed"] = True  # Custom flag
+                return  # Exit early and wait for next form submission
             elif event.event == "update":
                 placeholder.info(event.data)
             elif event.event == "end":
