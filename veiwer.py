@@ -159,6 +159,7 @@ def request_entity_viewer():
         except Exception as e:
             st.error(f"An error occurred: {str(e)}")
     if st.button("Generate Request Using AI"):
+        
         thread_id = str(uuid.uuid4())
         st.markdown("🔄 Calling `stream_chat()` now...")
         st.session_state["regenerate_requested"] = True
